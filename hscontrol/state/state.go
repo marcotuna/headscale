@@ -651,7 +651,38 @@ func (s *State) SetNodeExpiry(nodeID types.NodeID, expiry time.Time) (types.Node
 	return s.persistNodeToDB(n)
 }
 
-// SetNodeTags assigns tags to a node for use in access control policies.
+// DisableNodeExpiry clears the expiration time for a node, making it never expire.
+func (s *State) DisableNodeExpiry(nodeID types.NodeID) (types.NodeView, change.ChangeSet, error) {
+	// Update NodeStore to clear expiry
+	n, ok := s.nodeStore.UpdateNode(nodeID, func(node *types.Node) {
+		node.Expiry = nil
+	})
+
+	if !ok {
+		return types.NodeView{}, change.EmptySet, fmt.Errorf("node not found in NodeStore: %d", nodeID)
+	}
+
+	// Persist expiry change to database directly since persistNodeToDB omits expiry
+	if err := s.db.NodeDisableExpiry(nodeID); err != nil {
+		return types.NodeView{}, change.EmptySet, fmt.Errorf("disabling node expiry in database: %w", err)
+	}
+
+	// Update policy manager and generate change notification
+	c, err := s.updatePolicyManagerNodes()
+	if err != nil {
+		return n, change.EmptySet, fmt.Errorf("failed to update policy manager after disabling expiry: %w", err)
+	}
+
+	if c.Empty() {
+		c = change.NodeAdded(n.ID())
+	}
+
+	return n, c, nil
+}
+
+// SetNodeTags assigns tags to a node, making it a "tagged node".
+// Once a node is tagged, it cannot be un-tagged (only tags can be changed).
+// The UserID is preserved as "created by" information.
 func (s *State) SetNodeTags(nodeID types.NodeID, tags []string) (types.NodeView, change.ChangeSet, error) {
 	// Update NodeStore before database to ensure consistency. The NodeStore update is
 	// blocking and will be the source of truth for the batcher. The database update must

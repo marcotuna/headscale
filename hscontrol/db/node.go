@@ -309,6 +309,17 @@ func NodeSetExpiry(tx *gorm.DB,
 	return tx.Model(&types.Node{}).Where("id = ?", nodeID).Update("expiry", expiry).Error
 }
 
+func (hsdb *HSDatabase) NodeDisableExpiry(nodeID types.NodeID) error {
+	return hsdb.Write(func(tx *gorm.DB) error {
+		return NodeDisableExpiry(tx, nodeID)
+	})
+}
+
+// NodeDisableExpiry clears the expiry for a node, making it never expire.
+func NodeDisableExpiry(tx *gorm.DB, nodeID types.NodeID) error {
+	return tx.Model(&types.Node{}).Where("id = ?", nodeID).Update("expiry", nil).Error
+}
+
 func (hsdb *HSDatabase) DeleteNode(node *types.Node) error {
 	return hsdb.Write(func(tx *gorm.DB) error {
 		return DeleteNode(tx, node)

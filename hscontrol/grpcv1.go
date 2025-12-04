@@ -455,6 +455,23 @@ func (api headscaleV1APIServer) ExpireNode(
 	ctx context.Context,
 	request *v1.ExpireNodeRequest,
 ) (*v1.ExpireNodeResponse, error) {
+	// Handle disable expiry request - node will never expire
+	if request.GetDisableExpiry() {
+		node, nodeChange, err := api.h.state.DisableNodeExpiry(types.NodeID(request.GetNodeId()))
+		if err != nil {
+			return nil, err
+		}
+
+		api.h.Change(nodeChange)
+
+		log.Trace().
+			Caller().
+			Str("node", node.Hostname()).
+			Msg("node expiry disabled")
+
+		return &v1.ExpireNodeResponse{Node: node.Proto()}, nil
+	}
+
 	expiry := time.Now()
 	if request.GetExpiry() != nil {
 		expiry = request.GetExpiry().AsTime()
