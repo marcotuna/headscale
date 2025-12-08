@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"tailscale.com/tailcfg"
+	"tailscale.com/types/ptr"
 )
 
 func node(name, ipv4, ipv6 string, user types.User, hostinfo *tailcfg.Hostinfo) *types.Node {
@@ -19,8 +20,8 @@ func node(name, ipv4, ipv6 string, user types.User, hostinfo *tailcfg.Hostinfo) 
 		Hostname: name,
 		IPv4:     ap(ipv4),
 		IPv6:     ap(ipv6),
-		User:     user,
-		UserID:   user.ID,
+		User:     ptr.To(user),
+		UserID:   ptr.To(user.ID),
 		Hostinfo: hostinfo,
 	}
 }
@@ -456,21 +457,21 @@ func TestAutogroupSelfWithOtherRules(t *testing.T) {
 		Hostname: "test-1-device",
 		IPv4:     ap("100.64.0.1"),
 		IPv6:     ap("fd7a:115c:a1e0::1"),
-		User:     users[0],
-		UserID:   users[0].ID,
+		User:     ptr.To(users[0]),
+		UserID:   ptr.To(users[0].ID),
 		Hostinfo: &tailcfg.Hostinfo{},
 	}
 
 	// test-2 has a router device with tag:node-router
 	test2RouterNode := &types.Node{
-		ID:         2,
-		Hostname:   "test-2-router",
-		IPv4:       ap("100.64.0.2"),
-		IPv6:       ap("fd7a:115c:a1e0::2"),
-		User:       users[1],
-		UserID:     users[1].ID,
-		ForcedTags: []string{"tag:node-router"},
-		Hostinfo:   &tailcfg.Hostinfo{},
+		ID:       2,
+		Hostname: "test-2-router",
+		IPv4:     ap("100.64.0.2"),
+		IPv6:     ap("fd7a:115c:a1e0::2"),
+		User:     ptr.To(users[1]),
+		UserID:   ptr.To(users[1].ID),
+		Tags:     []string{"tag:node-router"},
+		Hostinfo: &tailcfg.Hostinfo{},
 	}
 
 	nodes := types.Nodes{test1Node, test2RouterNode}
@@ -536,8 +537,8 @@ func TestAutogroupSelfPolicyUpdateTriggersMapResponse(t *testing.T) {
 		Hostname: "test-1-device",
 		IPv4:     ap("100.64.0.1"),
 		IPv6:     ap("fd7a:115c:a1e0::1"),
-		User:     users[0],
-		UserID:   users[0].ID,
+		User:     ptr.To(users[0]),
+		UserID:   ptr.To(users[0].ID),
 		Hostinfo: &tailcfg.Hostinfo{},
 	}
 
@@ -546,8 +547,8 @@ func TestAutogroupSelfPolicyUpdateTriggersMapResponse(t *testing.T) {
 		Hostname: "test-2-device",
 		IPv4:     ap("100.64.0.2"),
 		IPv6:     ap("fd7a:115c:a1e0::2"),
-		User:     users[1],
-		UserID:   users[1].ID,
+		User:     ptr.To(users[1]),
+		UserID:   ptr.To(users[1].ID),
 		Hostinfo: &tailcfg.Hostinfo{},
 	}
 

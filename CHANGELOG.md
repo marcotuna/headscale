@@ -21,6 +21,10 @@ at creation time. When listing keys, only the prefix is shown (e.g.,
 `hskey-auth-{prefix}-{secret}`. Legacy plaintext keys continue to work for
 backwards compatibility.
 
+### Tags
+
+Tags are now implemented following the Tailscale model where tags and user ownership are mutually exclusive. Devices can be either user-owned (authenticated via web/OIDC) or tagged (authenticated via tagged PreAuthKeys). Tagged devices receive their identity from tags rather than users, making them suitable for servers and infrastructure. Applying a tag to a device removes user-based authentication. See the [Tailscale tags documentation](https://tailscale.com/kb/1068/tags) for details on how tags work.
+
 ### Database migration support removed for pre-0.25.0 databases
 
 Headscale no longer supports direct upgrades from databases created before
@@ -29,6 +33,8 @@ stable release, selecting the latest patch version available for each minor
 release.
 
 ### BREAKING
+
+- **Tags**: The gRPC `SetTags` endpoint now allows converting user-owned nodes to tagged nodes by setting tags. Once a node is tagged, it cannot be converted back to a user-owned node.
 
 - Database migration support removed for pre-0.25.0 databases [#2883](https://github.com/juanfont/headscale/pull/2883)
   - If you are running a version older than 0.25.0, you must upgrade to 0.25.1 first, then upgrade to this release
@@ -52,6 +58,7 @@ release.
   - Detect when only node endpoints or DERP region changed and send
     PeerChangedPatch responses instead of full map updates, reducing bandwidth
     and improving performance
+- Tags can now be tagOwner of other tags [#2930](https://github.com/juanfont/headscale/pull/2930)
 
 ## 0.27.2 (2025-xx-xx)
 
