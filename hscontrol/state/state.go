@@ -662,11 +662,12 @@ func (s *State) DisableNodeExpiry(nodeID types.NodeID) (types.NodeView, change.C
 	})
 
 	if !ok {
-		return types.NodeView{}, change.EmptySet, fmt.Errorf("node not found in NodeStore: %d", nodeID)
+		return types.NodeView{}, change.EmptySet, fmt.Errorf("node %d: %w", nodeID, ErrNodeNotFound)
 	}
 
 	// Persist expiry change to database directly since persistNodeToDB omits expiry
-	if err := s.db.NodeDisableExpiry(nodeID); err != nil {
+	err := s.db.NodeDisableExpiry(nodeID)
+	if err != nil {
 		return types.NodeView{}, change.EmptySet, fmt.Errorf("disabling node expiry in database: %w", err)
 	}
 
