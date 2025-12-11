@@ -644,13 +644,7 @@ func (s *State) SetNodeExpiry(nodeID types.NodeID, expiry *time.Time) (types.Nod
 	// make the exact same change. If the database update fails, the NodeStore change will
 	// remain, but since we return an error, no change notification will be sent to the
 	// batcher, preventing inconsistent state propagation.
-
-	// Make a copy of the expiry to avoid aliasing issues with the caller's pointer
-	var expiryPtr *time.Time
-	if expiry != nil {
-		expiryCopy := *expiry
-		expiryPtr = &expiryCopy
-	}
+	expiryPtr := expiry
 
 	n, ok := s.nodeStore.UpdateNode(nodeID, func(node *types.Node) {
 		node.Expiry = expiryPtr
