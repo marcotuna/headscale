@@ -111,7 +111,7 @@ func (s *Suite) TestExpireNode(c *check.C) {
 	c.Assert(nodeFromDB.IsExpired(), check.Equals, false)
 
 	now := time.Now()
-	err = db.NodeSetExpiry(nodeFromDB.ID, now)
+	err = db.NodeSetExpiry(nodeFromDB.ID, &now)
 	c.Assert(err, check.IsNil)
 
 	nodeFromDB, err = db.getNode(types.UserID(user.ID), "testnode")
@@ -445,7 +445,7 @@ func TestAutoApproveRoutes(t *testing.T) {
 						RoutableIPs: tt.routes,
 					},
 					Tags: []string{"tag:exit"},
-					IPv4:       ptr.To(netip.MustParseAddr("100.64.0.2")),
+					IPv4: ptr.To(netip.MustParseAddr("100.64.0.2")),
 				}
 
 				err = adb.DB.Save(&nodeTagged).Error

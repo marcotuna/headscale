@@ -256,9 +256,12 @@ var listNodeRoutesCmd = &cobra.Command{
 }
 
 var expireNodeCmd = &cobra.Command{
-	Use:     "expire",
-	Short:   "Expire (log out) a node in your network",
-	Long:    "Expiring a node will keep the node in the database and force it to reauthenticate.\nUse --disable to disable key expiry (node will never expire).",
+	Use:   "expire",
+	Short: "Expire (log out) a node in your network",
+	Long: `
+Expiring a node will keep the node in the database and force it to reauthenticate.
+
+Use --disable to disable key expiry (node will never expire).`,
 	Aliases: []string{"logout", "exp", "e"},
 	Run: func(cmd *cobra.Command, args []string) {
 		output, _ := cmd.Flags().GetString("output")

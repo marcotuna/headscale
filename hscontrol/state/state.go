@@ -636,29 +636,23 @@ func (s *State) ListEphemeralNodes() views.Slice[types.NodeView] {
 }
 
 // SetNodeExpiry updates the expiration time for a node.
-func (s *State) SetNodeExpiry(nodeID types.NodeID, expiry time.Time) (types.NodeView, change.ChangeSet, error) {
+// If expiry is nil, the node's expiry is disabled (node will never expire).
+func (s *State) SetNodeExpiry(nodeID types.NodeID, expiry *time.Time) (types.NodeView, change.ChangeSet, error) {
 	// Update NodeStore before database to ensure consistency. The NodeStore update is
 	// blocking and will be the source of truth for the batcher. The database update must
 	// make the exact same change. If the database update fails, the NodeStore change will
 	// remain, but since we return an error, no change notification will be sent to the
 	// batcher, preventing inconsistent state propagation.
-	expiryPtr := expiry
-	n, ok := s.nodeStore.UpdateNode(nodeID, func(node *types.Node) {
-		node.Expiry = &expiryPtr
-	})
 
-	if !ok {
-		return types.NodeView{}, change.EmptySet, fmt.Errorf("node not found in NodeStore: %d", nodeID)
+	// Make a copy of the expiry to avoid aliasing issues with the caller's pointer
+	var expiryPtr *time.Time
+	if expiry != nil {
+		expiryCopy := *expiry
+		expiryPtr = &expiryCopy
 	}
 
-	return s.persistNodeToDB(n)
-}
-
-// DisableNodeExpiry clears the expiration time for a node, making it never expire.
-func (s *State) DisableNodeExpiry(nodeID types.NodeID) (types.NodeView, change.ChangeSet, error) {
-	// Update NodeStore to clear expiry
 	n, ok := s.nodeStore.UpdateNode(nodeID, func(node *types.Node) {
-		node.Expiry = nil
+		node.Expiry = expiryPtr
 	})
 
 	if !ok {
@@ -666,15 +660,15 @@ func (s *State) DisableNodeExpiry(nodeID types.NodeID) (types.NodeView, change.C
 	}
 
 	// Persist expiry change to database directly since persistNodeToDB omits expiry
-	err := s.db.NodeDisableExpiry(nodeID)
+	err := s.db.NodeSetExpiry(nodeID, expiry)
 	if err != nil {
-		return types.NodeView{}, change.EmptySet, fmt.Errorf("disabling node expiry in database: %w", err)
+		return types.NodeView{}, change.EmptySet, fmt.Errorf("setting node expiry in database: %w", err)
 	}
 
 	// Update policy manager and generate change notification
 	c, err := s.updatePolicyManagerNodes()
 	if err != nil {
-		return n, change.EmptySet, fmt.Errorf("failed to update policy manager after disabling expiry: %w", err)
+		return n, change.EmptySet, fmt.Errorf("failed to update policy manager after setting expiry: %w", err)
 	}
 
 	if c.Empty() {

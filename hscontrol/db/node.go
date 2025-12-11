@@ -298,28 +298,16 @@ func RenameNode(tx *gorm.DB,
 	return nil
 }
 
-func (hsdb *HSDatabase) NodeSetExpiry(nodeID types.NodeID, expiry time.Time) error {
+func (hsdb *HSDatabase) NodeSetExpiry(nodeID types.NodeID, expiry *time.Time) error {
 	return hsdb.Write(func(tx *gorm.DB) error {
 		return NodeSetExpiry(tx, nodeID, expiry)
 	})
 }
 
-// NodeSetExpiry takes a Node struct and  a new expiry time.
-func NodeSetExpiry(tx *gorm.DB,
-	nodeID types.NodeID, expiry time.Time,
-) error {
+// NodeSetExpiry takes a Node struct and a new expiry time.
+// If expiry is nil, the node's expiry is disabled (node will never expire).
+func NodeSetExpiry(tx *gorm.DB, nodeID types.NodeID, expiry *time.Time) error {
 	return tx.Model(&types.Node{}).Where("id = ?", nodeID).Update("expiry", expiry).Error
-}
-
-func (hsdb *HSDatabase) NodeDisableExpiry(nodeID types.NodeID) error {
-	return hsdb.Write(func(tx *gorm.DB) error {
-		return NodeDisableExpiry(tx, nodeID)
-	})
-}
-
-// NodeDisableExpiry clears the expiry for a node, making it never expire.
-func NodeDisableExpiry(tx *gorm.DB, nodeID types.NodeID) error {
-	return tx.Model(&types.Node{}).Where("id = ?", nodeID).Update("expiry", nil).Error
 }
 
 func (hsdb *HSDatabase) DeleteNode(node *types.Node) error {
